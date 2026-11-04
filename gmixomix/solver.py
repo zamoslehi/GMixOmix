@@ -5,12 +5,16 @@ Robust Multimodal Graph Matching: Sparse Coding Meets Graph Matching.
 Advances in Neural Information Processing Systems 26 (NIPS 2013).
 M. Fiori, P. Sprechmann, J. Vogelstein, P. Muse, G. Sapiro.
 """
+import os
 from typing import Tuple
 
 import numba
 import numpy as np
 from numba import njit, set_num_threads
 from scipy.optimize import linear_sum_assignment
+
+# Threads used in each process. Lower this when running several processes at once.
+NUM_THREADS = int(os.environ.get("GMIXOMIX_THREADS", 6))
 
 
 @njit(parallel=True)
@@ -106,7 +110,7 @@ def admom_sub_solve_for_P_linearized_withD(c1, c2, D_GA, X_A, X_B, W, alpha, bet
     CmAPk = C - A @ Pk
     DmPkB = D - Pk @ B
     XAmPkE = X_A - Pk @ E
-    set_num_threads(6)
+    set_num_threads(NUM_THREADS)
     f = c1 / 2 * normF2(CmAPk) + c1 / 2 * normF2(DmPkB) + c2 * normF2(XAmPkE)
     f2 = f + 1
 
@@ -135,7 +139,7 @@ def admom_sub_solve_for_P_onestep_withD(c1, c2, D_GA, X_A, X_B, W, alpha, beta, 
     CmAPk = C - A @ Pk
     DmPkB = D - Pk @ B
     XAmPkF = X_A - Pk @ E
-    set_num_threads(6)
+    set_num_threads(NUM_THREADS)
     f = c1 / 2 * normF2(CmAPk) + c1 / 2 * normF2(DmPkB) + c2 * normF2(XAmPkF)
 
     eta = 0.7
@@ -155,7 +159,7 @@ def admom_sub_solve_for_P_onestep_withD(c1, c2, D_GA, X_A, X_B, W, alpha, beta, 
         for i in range(1, N + 1):
             a = 1.0 / i
             Pc = (1 - a) * Pk + a * P2
-            set_num_threads(6)
+            set_num_threads(NUM_THREADS)
             fc = c1 / 2 * normF2(C - A @ Pc) + c1 / 2 * normF2(D - Pc @ B) + c2 * normF2(X_A - Pc @ E)
             if fc < f:
                 P2 = Pc
@@ -168,7 +172,7 @@ def admom_sub_solve_for_P_onestep_withD(c1, c2, D_GA, X_A, X_B, W, alpha, beta, 
 
 def w_objective(c2, c3, c4, D, X_A, X_B, w, P):
     """Objective of the w subproblem."""
-    set_num_threads(6)
+    set_num_threads(NUM_THREADS)
     E = X_B * w @ D
     return c2 * normF2(X_A - P @ E) + c3 * np.sum(w ** 2) - c4 * np.sum(np.log(np.maximum(w, 1e-15)))
 
@@ -332,7 +336,7 @@ def graph_matching_withD(
             rhoE = np.max(np.linalg.eigh(E.T @ E)[0])
             rho = max(rhoA, rhoB, rhoE)
             tau = 0.8 / rho
-            set_num_threads(6)
+            set_num_threads(NUM_THREADS)
             P = admom_sub_solve_for_P_linearized_withD(c1, c2, D_GA, X_A, X_B, np.diag(w), alpha, beta, A, B, U, V, tau, P, tole)
 
         if c2 > 0:
@@ -365,7 +369,7 @@ def graph_matching_withD(
         forigi.append(fori)
 
         if iter_ > 5:
-            set_num_threads(6)
+            set_num_threads(NUM_THREADS)
             FirstTerm = normF(A @ P - P @ B)
             SecondTerm = normF2(X_A - P @ X_B * w @ D_GA)
             normAPPB = c1 * FirstTerm + c2 * SecondTerm + c3 * np.sum(w ** 2)
