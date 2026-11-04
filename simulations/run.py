@@ -74,8 +74,9 @@ def simulate(cfg, rng1, rng2, Y, labels):
     pca_a, pca_b = None, None
     if cfg["graph_from_omics"]:
         pre = (lambda X: np.log(X + 1)) if cfg["poisson"] else (lambda X: X)
-        pca_a = PCA(cfg["pca_dims"]).fit_transform(pre(Xa))
-        pca_b = PCA(cfg["pca_dims"]).fit_transform(pre(Xb))
+        seed_a, seed_b = (int(s) for s in rng2.integers(2 ** 31, size=2))
+        pca_a = PCA(cfg["pca_dims"], random_state=seed_a).fit_transform(pre(Xa))
+        pca_b = PCA(cfg["pca_dims"], random_state=seed_b).fit_transform(pre(Xb))
         A = compute_adjaciency_matrix(pca_a, n_neighbors=cfg["k"])
         B = compute_adjaciency_matrix(pca_b, n_neighbors=cfg["k"])
     else:
