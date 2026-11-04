@@ -1,7 +1,22 @@
 import numpy as np
 
 from gmixomix import compute_adjaciency_matrix, graph_matching_withD
-from gmixomix.solver import project_DS
+from gmixomix.solver import project_DS, w_gradient, w_objective
+
+
+def test_w_gradient_matches_finite_differences():
+    rng = np.random.default_rng(0)
+    D = rng.integers(0, 2, size=(6, 3)).astype(float)
+    X_A, X_B = rng.normal(size=(5, 3)), rng.normal(size=(5, 6))
+    P = np.eye(5)[rng.permutation(5)]
+    w = rng.uniform(0.5, 1.5, size=6)
+    args = dict(c2=5.0, c3=2.0, c4=3.0, D=D, X_A=X_A, X_B=X_B, P=P)
+    h = 1e-6
+    numeric = [
+        (w_objective(w=w + h * np.eye(6)[i], **args) - w_objective(w=w - h * np.eye(6)[i], **args)) / (2 * h)
+        for i in range(6)
+    ]
+    assert np.allclose(w_gradient(w=w, **args), numeric, atol=1e-4)
 
 
 def test_project_DS_gives_doubly_stochastic_matrix():

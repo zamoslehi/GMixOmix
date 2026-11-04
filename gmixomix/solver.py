@@ -166,19 +166,19 @@ def admom_sub_solve_for_P_onestep_withD(c1, c2, D_GA, X_A, X_B, W, alpha, beta, 
     return P2
 
 
-def admom_sub_solve_for_w_onestep_withD(c2, c3, c4, D, X_A, X_B, W, P):
-    """Update the peak weights w with a line search."""
-    w = np.diag(W)
-    E = X_B * w @ D
+def w_objective(c2, c3, c4, D, X_A, X_B, w, P):
+    """Objective of the w subproblem."""
     set_num_threads(6)
-    f = c2 * normF2(X_A - P @ E) + c3 * np.sum(w ** 2) - c4 * np.sum(np.log(np.maximum(w, 1e-15)))
-    eta = 0.7
-    max_iter_in = 100
-    N = 5
-    step = 0.00001
+    E = X_B * w @ D
+    return c2 * normF2(X_A - P @ E) + c3 * np.sum(w ** 2) - c4 * np.sum(np.log(np.maximum(w, 1e-15)))
 
-    # Only the diagonal of the gradient matrix is needed, so the last matrix
-    # multiplications are replaced by element-wise sums.
+
+def w_gradient(c2, c3, c4, D, X_A, X_B, w, P):
+    """Gradient of the w subproblem.
+
+    Only the diagonal of the gradient matrix is needed, so the last matrix
+    multiplications are replaced by element-wise sums.
+    """
     P_XB = P @ X_B
     D_DT = D @ D.T
     XA_DT = X_A @ D.T
@@ -187,8 +187,18 @@ def admom_sub_solve_for_w_onestep_withD(c2, c3, c4, D, X_A, X_B, W, P):
     WD_DT = D_DT * w[:, None]
     diagPXBTPXB_WDDT = np.sum(PXBT_PXB.T * WD_DT, 0)
     diagGrad_matrix = -2 * diagPXBT_XADT + 2 * diagPXBTPXB_WDDT
+    return c2 * diagGrad_matrix + 2 * c3 * w - c4 / np.maximum(w, 1e-15)
 
-    grad_w = c2 * diagGrad_matrix + 2 * c3 * w + c4 / np.maximum(w, 1e-15)
+
+def admom_sub_solve_for_w_onestep_withD(c2, c3, c4, D, X_A, X_B, W, P):
+    """Update the peak weights w with a line search."""
+    w = np.diag(W)
+    f = w_objective(c2, c3, c4, D, X_A, X_B, w, P)
+    eta = 0.7
+    max_iter_in = 100
+    N = 5
+    step = 0.00001
+    grad_w = w_gradient(c2, c3, c4, D, X_A, X_B, w, P)
 
     notGoodEnough = True
     iter_in = 0
@@ -200,9 +210,7 @@ def admom_sub_solve_for_w_onestep_withD(c2, c3, c4, D, X_A, X_B, W, P):
         for i in range(1, N + 1):
             a = 1.0 / i
             wc = (1 - a) * w + a * w1
-            Ec = X_B * wc @ D
-            set_num_threads(6)
-            fc = c2 * normF2(X_A - P @ Ec) + c3 * np.sum(wc ** 2) - c4 * np.sum(np.log(np.maximum(wc, 1e-15)))
+            fc = w_objective(c2, c3, c4, D, X_A, X_B, wc, P)
             if fc < f:
                 w1 = wc
                 notGoodEnough = False
