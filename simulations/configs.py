@@ -9,8 +9,8 @@ NCELLS = [90, 110, 120, 80, 100]
 NPEAKS = 1000
 NGENES = 100
 
-_STRICT = dict(tol=9e-17, tolbar=1e-5, tol2=9e-16)
-_LOOSE = dict(tol=1e-5, tolbar=1e-5, tol2=1e-6)
+_STRICT = dict(tol=9e-17, tolbar=1e-5)
+_LOOSE = dict(tol=1e-5, tolbar=1e-5)
 _NO_OMICS = dict(c1=1, c2=0, c3=0, c4=0)
 _OMICS = dict(c1=1, c2=5, c3=0, c4=5)
 

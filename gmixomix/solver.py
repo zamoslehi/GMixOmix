@@ -241,7 +241,6 @@ def graph_matching_withD(
     c4: float = 1.0,
     tol: float = 2e-2,
     tolbar: float = 1e-4,
-    tol2: float = 9e-9,
     N: int = 100,
     maxIter: int = 30000,
     verbose: bool = False,
@@ -270,8 +269,6 @@ def graph_matching_withD(
         Tolerance on the objective used for stopping.
     tolbar : float
         Tolerance on the barrier term used for stopping.
-    tol2 : float
-        Tolerance on the change between iterations.
     N : int
         Check the closest permutation matrix every N iterations.
     maxIter : int
@@ -310,7 +307,6 @@ def graph_matching_withD(
     rhoA = np.max(np.linalg.eigh(A.T @ A)[0])
     rhoB = np.max(np.linalg.eigh(B.T @ B)[0])
 
-    var = 1.0
     normAPPB = 1.0
     normAPPB1 = 1.0
 
@@ -375,7 +371,6 @@ def graph_matching_withD(
             normAPPB = c1 * FirstTerm + c2 * SecondTerm + c3 * np.sum(w ** 2)
             barrier_term = -c4 * np.sum(np.log(np.maximum(w, 1e-15)))
 
-            var = 100
             zigzag = (
                 (forigi[iter_ - 3] < forigi[iter_ - 2])
                 * (forigi[iter_ - 3] < forigi[iter_ - 4])
@@ -385,17 +380,11 @@ def graph_matching_withD(
             )
             zigzag1 = zigzag1 + zigzag
 
-            if iter_ == 6 and var < 1e-7:
-                var = 1
-                P = np.eye(p)
-
         if verbose and stop_condition(normAPPB, normAPPB1, barrier_term, iter_, tol, tolbar, maxIter):
             if not (normAPPB > tol):
                 print(f"Terminating at {iter_} for tol (APPB) at {normAPPB}")
             if not (normAPPB1 > tol):
                 print(f"Terminating at {iter_} for tol (APPB1)")
-            if not (var > tol2):
-                print(f"Terminating at {iter_} for tol2 = {var}")
             if not (iter_ < maxIter):
                 print(f"Terminating at {iter_} for maxiter")
 

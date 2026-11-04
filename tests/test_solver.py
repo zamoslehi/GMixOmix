@@ -35,5 +35,5 @@ def test_recovers_a_permutation_of_identical_graphs():
     B = compute_adjaciency_matrix(Y, n_neighbors=10)
     D, Xa, Xb = np.zeros((10, 5), dtype=int), np.zeros((60, 5), dtype=int), np.zeros((60, 10), dtype=int)
     _, P, _ = graph_matching_withD(D, Xa, Xb, A, B, c1=1, c2=0, c3=0, c4=0, N=20, maxIter=300,
-                                   tol=9e-17, tolbar=1e-5, tol2=9e-16)
+                                   tol=9e-17, tolbar=1e-5)
     assert np.mean(np.all(P @ Y == P0 @ Y, axis=1)) > 0.9
