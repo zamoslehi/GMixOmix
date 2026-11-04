@@ -1,13 +1,15 @@
 """Run the simulations and save their results.
 
 Usage, from the repository root:
-    python -m simulations.run                     # all simulations
+    python -m simulations.run                     # the 11 simulations of the paper
     python -m simulations.run --sims 1 "8'" 10    # some simulations
     python -m simulations.run --repeats 2         # fewer repeats
+    python -m simulations.run --version no_barrier
 
-Each simulation has its own file in results/runs/, so running one simulation
-does not change the results of the others. results/summary.csv is then rebuilt
-from all the files in results/runs/.
+Each simulation has its own file in results/<version>/runs/, so running one
+simulation does not change the results of the others. A simulation that already
+has all its repeats is skipped. results/<version>/summary.csv is then rebuilt
+from all the files in that folder.
 """
 import argparse
 import csv
@@ -92,9 +94,9 @@ def slug(name):
     return "sim_" + name.replace("'", "prime")
 
 
-def save_figures(name, sim, P):
+def save_figures(version, name, sim, P):
     """Save the matching found in a repeat of a simulation."""
-    directory = RESULTS / "figures"
+    directory = RESULTS / version / "figures"
     directory.mkdir(parents=True, exist_ok=True)
     pa, pb = (sim["pca_a"], sim["pca_b"]) if sim["pca_a"] is not None else (sim["Ya"], sim["Yb"])
     rng = np.random.default_rng(configs.SEED)
@@ -105,13 +107,20 @@ def save_figures(name, sim, P):
         plt.close(fig)
 
 
-def run_simulation(name, n_repeats=configs.N_REPEATS, verbose=False):
+def run_simulation(name, version="barrier", n_repeats=configs.N_REPEATS, verbose=False):
     """Run the repeats of one simulation and write one row per repeat."""
+    path = RESULTS / version / "runs" / f"{slug(name)}.csv"
+    if path.exists():
+        with open(path) as handle:
+            if len(list(csv.DictReader(handle))) == n_repeats:
+                print(f"Simulation {name} already has {n_repeats} repeats, skipping", flush=True)
+                return
+
     cfg = configs.SIMULATIONS[name]
+    solver = dict(cfg["solver"], **configs.VERSIONS[version])
     rng1, rng2 = make_generators()
     covariances = make_covariances()
 
-    path = RESULTS / "runs" / f"{slug(name)}.csv"
     path.parent.mkdir(parents=True, exist_ok=True)
     rows = []
     for repeat in range(n_repeats):
@@ -119,7 +128,7 @@ def run_simulation(name, n_repeats=configs.N_REPEATS, verbose=False):
         Y, labels = data.make_latent_space(rng1, configs.MEANS, covariances, configs.NCELLS)
         sim = simulate(cfg, rng1, rng2, Y, labels)
         _, P, w = graph_matching_withD(sim["D"], sim["Xa"], sim["Xb"], sim["A"], sim["B"],
-                                       verbose=verbose, **cfg["solver"])
+                                       verbose=verbose, **solver)
         stats = calc_stats(sim["Ya"], sim["Yb"], sim["labels_a"], sim["labels_b"], sim["P0"], P, k=20)
         row = dict(simulation=name, repeat=repeat, **stats,
                    w_min=float(w.min()), w_max=float(w.max()), seconds=round(time.time() - start, 1))
@@ -131,16 +140,18 @@ def run_simulation(name, n_repeats=configs.N_REPEATS, verbose=False):
             writer.writerows(rows)
         print(f"Simulation {name} repeat {repeat}: label accuracy {stats['label_accuracy']:.4f}, "
               f"{row['seconds']} s", flush=True)
-    save_figures(name, sim, P)
+    save_figures(version, name, sim, P)
 
 
-def summarize():
-    """Rebuild results/summary.csv with the mean and SD of each simulation."""
-    metrics = ["label_accuracy", "relaxed_match_accuracy", "fract_exact_matches", "avg_dist_solution",
-               "label_accuracy_input_I", "relaxed_match_accuracy_input_I", "avg_dist_input_I"]
+def summarize(version="barrier"):
+    """Rebuild results/<version>/summary.csv with the mean and SD of each simulation."""
+    metrics = ["label_accuracy", "label_accuracy_input", "label_accuracy_groundtruth",
+               "relaxed_match_accuracy", "relaxed_match_accuracy_input", "relaxed_match_accuracy_groundtruth",
+               "avg_dist_solution", "avg_dist_input", "avg_dist_groundtruth",
+               "fract_exact_matches", "w_min", "w_max", "seconds"]
     rows = []
     for name, cfg in configs.SIMULATIONS.items():
-        path = RESULTS / "runs" / f"{slug(name)}.csv"
+        path = RESULTS / version / "runs" / f"{slug(name)}.csv"
         if not path.exists():
             continue
         with open(path) as handle:
@@ -152,7 +163,7 @@ def summarize():
             row[f"{metric}_sd"] = round(statistics.stdev(values), 4) if len(values) > 1 else ""
         rows.append(row)
     if rows:
-        with open(RESULTS / "summary.csv", "w", newline="") as handle:
+        with open(RESULTS / version / "summary.csv", "w", newline="") as handle:
             writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
             writer.writeheader()
             writer.writerows(rows)
@@ -160,22 +171,25 @@ def summarize():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--sims", nargs="+", choices=list(configs.SIMULATIONS), default=list(configs.SIMULATIONS))
+    parser.add_argument("--sims", nargs="+", choices=list(configs.SIMULATIONS),
+                        default=list(configs.PAPER_SIMULATIONS.values()))
+    parser.add_argument("--version", choices=list(configs.VERSIONS), default="barrier")
+    parser.add_argument("--threads", type=int, default=6)
     parser.add_argument("--repeats", type=int, default=configs.N_REPEATS)
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
     plt.switch_backend("Agg")  # figures are saved to files, not shown
-    threadpool_limits(limits=6)
+    threadpool_limits(limits=args.threads)
     rng = np.random.default_rng(configs.SEED)
     Y, labels = data.make_latent_space(rng, configs.MEANS, make_covariances(), configs.NCELLS)
-    directory = RESULTS / "figures"
+    directory = RESULTS / args.version / "figures"
     directory.mkdir(parents=True, exist_ok=True)
     plot_latent_space(Y, labels).savefig(directory / "latent_space.png", dpi=100, bbox_inches="tight")
 
     for name in args.sims:
-        run_simulation(name, args.repeats, args.verbose)
-        summarize()
+        run_simulation(name, args.version, args.repeats, args.verbose)
+        summarize(args.version)
 
 
 if __name__ == "__main__":
