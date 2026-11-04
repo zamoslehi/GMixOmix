@@ -108,13 +108,14 @@ def run_simulation(name, n_repeats=configs.N_REPEATS, verbose=False):
     """Run the repeats of one simulation and write one row per repeat."""
     cfg = configs.SIMULATIONS[name]
     rng1, rng2 = make_generators()
-    Y, labels = data.make_latent_space(rng1, configs.MEANS, make_covariances(), configs.NCELLS)
+    covariances = make_covariances()
 
     path = RESULTS / "runs" / f"{slug(name)}.csv"
     path.parent.mkdir(parents=True, exist_ok=True)
     rows = []
     for repeat in range(n_repeats):
         start = time.time()
+        Y, labels = data.make_latent_space(rng1, configs.MEANS, covariances, configs.NCELLS)
         sim = simulate(cfg, rng1, rng2, Y, labels)
         _, P, w = graph_matching_withD(sim["D"], sim["Xa"], sim["Xb"], sim["A"], sim["B"],
                                        verbose=verbose, **cfg["solver"])
