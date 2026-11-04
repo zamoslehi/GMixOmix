@@ -32,7 +32,8 @@ LATENT_DIMS = len(configs.MEANS[0])
 
 def make_generators():
     """Return the random generators of the latent space and of RNA and ATAC."""
-    return np.random.default_rng(configs.SEED), np.random.default_rng(configs.SEED)
+    latent, omics = np.random.SeedSequence(configs.SEED).spawn(2)
+    return np.random.default_rng(latent), np.random.default_rng(omics)
 
 
 def make_covariances():
