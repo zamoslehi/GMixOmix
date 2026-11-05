@@ -14,10 +14,6 @@ _LOOSE = dict(tol=1e-5, tolbar=1e-5)
 _NO_OMICS = dict(c1=1, c2=0, c3=0, c4=0)
 _OMICS = dict(c1=1, c2=5, c3=0, c4=5)
 
-# The two versions of the w update. "no_barrier" is the objective written in
-# equations 4-6 of the paper. "barrier" adds -c4*log(w), which keeps w positive.
-VERSIONS = {"barrier": {}, "no_barrier": {"c4": 0}}
-
 # Labels of the simulations in Table 1 of the paper, and their names in this file.
 PAPER_SIMULATIONS = {
     "S1": "1", "S2": "2", "S3": "3", "S4": "4", "S5": "5", "S6": "6", "S7": "7", "S8": "8",

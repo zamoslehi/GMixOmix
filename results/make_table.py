@@ -1,10 +1,9 @@
 """Write Table 1 of the paper from the saved results, and compare it with the paper.
 
 Usage, from the repository root:
-    python -m results.make_table barrier
+    python -m results.make_table
 """
 import csv
-import sys
 from pathlib import Path
 
 from simulations import configs
@@ -15,8 +14,8 @@ ROWS = [("Acc", "label_accuracy", "label_accuracy"),
         ("LDE", "avg_dist", "avg_dist_solution")]
 
 
-def read_summary(version):
-    with open(RESULTS / version / "summary.csv") as handle:
+def read_summary():
+    with open(RESULTS / "summary.csv") as handle:
         return {row["simulation"]: row for row in csv.DictReader(handle)}
 
 
@@ -42,7 +41,7 @@ def table_rows(summary):
             yield label, metric, cell(row, f"{stem}_input"), cell(row, f"{stem}_groundtruth"), cell(row, method)
 
 
-def write_latex(version, summary):
+def write_latex(summary):
     lines = [r"\begin{tabular}{llccc}", r"\hline", r" & & Input & Ground truth & GMixOmix \\", r"\hline"]
     last = None
     for label, metric, *values in table_rows(summary):
@@ -52,25 +51,24 @@ def write_latex(version, summary):
         lines.append(f"{first} & {metric} & " + " & ".join(values) + r" \\")
         last = label
     lines += [r"\hline", r"\end{tabular}"]
-    (RESULTS / version / "table1.tex").write_text("\n".join(lines) + "\n")
+    (RESULTS / "table1.tex").write_text("\n".join(lines) + "\n")
 
 
-def write_markdown(version, summary):
+def write_markdown(summary):
     paper = read_paper()
     lines = ["| Simulation | Metric | Input | Ground truth | GMixOmix | Paper (2021) |", "|---|---|---|---|---|---|"]
     for label, metric, *values in table_rows(summary):
         old = paper[(label, metric)]
         lines.append(f"| {label} | {metric} | " + " | ".join(plain(v) for v in values)
                      + f" | {float(old['method_mean']):.3f} ± {float(old['method_sd']):.3f} |")
-    (RESULTS / version / "table1.md").write_text("\n".join(lines) + "\n")
+    (RESULTS / "table1.md").write_text("\n".join(lines) + "\n")
 
 
 def main():
-    version = sys.argv[1] if len(sys.argv) > 1 else "barrier"
-    summary = read_summary(version)
-    write_latex(version, summary)
-    write_markdown(version, summary)
-    print((RESULTS / version / "table1.md").read_text())
+    summary = read_summary()
+    write_latex(summary)
+    write_markdown(summary)
+    print((RESULTS / "table1.md").read_text())
 
 
 if __name__ == "__main__":
