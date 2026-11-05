@@ -40,3 +40,8 @@ def test_slug_is_safe_for_file_names():
 def test_paper_labels_S1_to_S11_all_have_settings():
     assert list(configs.PAPER_SIMULATIONS) == [f"S{i}" for i in range(1, 12)]
     assert set(configs.PAPER_SIMULATIONS.values()) <= set(configs.SIMULATIONS)
+
+
+def test_paper_label():
+    assert configs.paper_label("8'") == "S9"
+    assert configs.paper_label("9") == "Simulation 9"

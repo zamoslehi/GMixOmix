@@ -101,7 +101,7 @@ def save_figures(name, sim, P):
     rng = np.random.default_rng(configs.SEED)
     for label, matching in (("ground_truth", sim["P0"]), ("solution", P)):
         fig = plot_matching(rng, pa[:, :2], pb[:, :2], matching, sim["labels_a"], sim["labels_b"],
-                            show_fraction=0.25, title=f"Simulation {name}: {label.replace('_', ' ')}")
+                            show_fraction=0.25, title=f"{configs.paper_label(name)}: {label.replace('_', ' ')}")
         fig.savefig(directory / f"{slug(name)}_{label}.png", dpi=100, bbox_inches="tight")
         plt.close(fig)
 
@@ -112,7 +112,7 @@ def run_simulation(name, n_repeats=configs.N_REPEATS, verbose=False):
     if path.exists():
         with open(path) as handle:
             if len(list(csv.DictReader(handle))) == n_repeats:
-                print(f"Simulation {name} already has {n_repeats} repeats, skipping", flush=True)
+                print(f"{configs.paper_label(name)} already has {n_repeats} repeats, skipping", flush=True)
                 return
 
     cfg = configs.SIMULATIONS[name]
@@ -136,7 +136,7 @@ def run_simulation(name, n_repeats=configs.N_REPEATS, verbose=False):
             writer = csv.DictWriter(handle, fieldnames=list(row))
             writer.writeheader()
             writer.writerows(rows)
-        print(f"Simulation {name} repeat {repeat}: label accuracy {stats['label_accuracy']:.4f}, "
+        print(f"{configs.paper_label(name)} repeat {repeat}: label accuracy {stats['label_accuracy']:.4f}, "
               f"{row['seconds']} s", flush=True)
     save_figures(name, sim, P)
 
@@ -154,7 +154,7 @@ def summarize():
             continue
         with open(path) as handle:
             repeats = list(csv.DictReader(handle))
-        row = dict(simulation=name, description=cfg["description"], repeats=len(repeats))
+        row = dict(simulation=name, paper=configs.paper_label(name), description=cfg["description"], repeats=len(repeats))
         for metric in metrics:
             values = [float(r[metric]) for r in repeats]
             row[f"{metric}_mean"] = round(statistics.mean(values), 4)

@@ -61,14 +61,14 @@ The saved results used 2 threads per process. A different number of threads can 
 | S1 | `1` | Identical latent space, adjacency only |
 | S2 | `2` | Latent space with tiny noise, adjacency only |
 | S3 | `3` | Latent space with more noise, adjacency only |
-| S4 | `4` | Same noise as S3 with more neighbours |
+| S4 | `4` | Same noise as S3, with more neighbours |
 | S5 | `5` | Latent adjacency helped by noiseless RNA and ATAC |
 | S6 | `6` | Latent adjacency helped by noisy RNA and ATAC |
 | S7 | `7` | Graphs from noisy RNA and ATAC, latent space not accessible |
-| S8 | `8` | As S7, RNA generated with a different D (5% of rows zeroed) |
+| S8 | `8` | As S7, with RNA generated from a different D (5% of rows zeroed) |
 | S9 | `8'` | As S8, with 70% of rows zeroed |
 | S10 | `9'` | As S9, with stronger regularization (c3=2000) |
-| S11 | `10` | As S8 with c3=20, and RNA and ATAC converted to Poisson counts |
+| S11 | `10` | As S8, with regularization (c3=20) and RNA and ATAC converted to Poisson counts |
 
 `9` in `simulations/configs.py` isn't in the paper.
 

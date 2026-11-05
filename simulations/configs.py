@@ -21,6 +21,12 @@ PAPER_SIMULATIONS = {
 }
 
 
+def paper_label(name):
+    """Return the label of a simulation in the paper, such as S9 for 8'."""
+    labels = {v: k for k, v in PAPER_SIMULATIONS.items()}
+    return labels.get(name, f"Simulation {name}")
+
+
 def _sim(description, *, snr=3, k=100, omics=False, omics_noise=False, graph_from_omics=False,
          d_rows_zero=None, poisson=False, pca_dims=4, solver):
     return dict(
@@ -44,7 +50,7 @@ SIMULATIONS = {
               solver=dict(_NO_OMICS, N=20, maxIter=500, **_STRICT)),
     "3": _sim("Latent space with more noise, adjacency only", k=50,
               solver=dict(_NO_OMICS, N=50, maxIter=1000, **_STRICT)),
-    "4": _sim("Same noise as 3 with more neighbours", k=100,
+    "4": _sim("Same noise as S3, with more neighbours", k=100,
               solver=dict(_NO_OMICS, N=50, maxIter=1000, **_STRICT)),
     "5": _sim("Latent adjacency helped by noiseless RNA and ATAC", omics=True,
               solver=dict(_OMICS, N=80, maxIter=1000, **_STRICT)),
@@ -53,19 +59,19 @@ SIMULATIONS = {
     "7": _sim("Graphs from noisy RNA and ATAC, latent space not accessible",
               omics=True, omics_noise=True, graph_from_omics=True,
               solver=dict(_OMICS, N=50, maxIter=1000, **_LOOSE)),
-    "8": _sim("As 7, RNA generated with a different D (5% of rows zeroed)",
+    "8": _sim("As S7, with RNA generated from a different D (5% of rows zeroed)",
               omics=True, omics_noise=True, graph_from_omics=True, d_rows_zero=0.05,
               solver=dict(_OMICS, N=50, maxIter=1000, **_LOOSE)),
-    "8'": _sim("As 8, with 70% of rows zeroed",
+    "8'": _sim("As S8, with 70% of rows zeroed",
                omics=True, omics_noise=True, graph_from_omics=True, d_rows_zero=0.7,
                solver=dict(_OMICS, N=50, maxIter=1000, **_LOOSE)),
-    "9": _sim("As 8, with regularization (c3=20)",
+    "9": _sim("As S8, with regularization (c3=20). Not in the paper",
               omics=True, omics_noise=True, graph_from_omics=True, d_rows_zero=0.05,
               solver=dict(_OMICS, c3=20, N=50, maxIter=1000, **_LOOSE)),
-    "9'": _sim("As 8', with stronger regularization (c3=2000)",
+    "9'": _sim("As S9, with stronger regularization (c3=2000)",
                omics=True, omics_noise=True, graph_from_omics=True, d_rows_zero=0.7,
                solver=dict(_OMICS, c3=2000, N=50, maxIter=1000, **_LOOSE)),
-    "10": _sim("As 9, with RNA and ATAC converted to Poisson counts",
+    "10": _sim("As S8, with regularization (c3=20) and RNA and ATAC converted to Poisson counts",
                omics=True, omics_noise=True, graph_from_omics=True, d_rows_zero=0.05,
                poisson=True, pca_dims=5,
                solver=dict(_OMICS, c3=20, N=50, maxIter=1000, **_LOOSE)),
