@@ -14,7 +14,7 @@ There are two notebooks in `notebooks/`. Open one and choose **Run > Run All Cel
 
 | Notebook | What it does | Time |
 |---|---|---|
-| `run_demo.ipynb` | Runs any of the 11 simulations once and shows the matching plots and metrics | About a minute for S1, an hour or more for all 11 |
+| `run_demo.ipynb` | Runs any of the 11 simulations once and shows the matching plots and metrics | Seconds for S1, about 40 minutes for all 11 |
 | `evaluation_demo.ipynb` | Shows the saved results of all 11 simulations: Table 1 and the matching plots | Seconds |
 
 ## Reproduce the results
@@ -28,6 +28,8 @@ python -m results.make_table                     # rebuild Table 1 from the save
 ```
 
 A simulation that already has all its repeats is skipped, so delete its file in `results/runs/` to run it again.
+
+The saved results used 2 threads per process. A different number of threads can change them slightly: the exact-match fraction of the first S2 repeat was 0.186 with 2 threads, 0.188 with 4 and 0.182 with 6.
 
 ## Which code does what
 
